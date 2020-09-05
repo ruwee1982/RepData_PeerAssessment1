@@ -1,0 +1,85 @@
+---
+title: "Activity Monitoring Data"
+author: "NEW RU WEE"
+date: "6 September 2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Loading and preprocessing the data}
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", "activity.zip")
+unzip("activity.zip")
+dat <- read.csv("activity.csv")
+View(dat)
+
+```
+
+
+
+```{r mean steps per day, echo=FALSE}
+dat2 <- aggregate(steps ~ date, dat, sum, na.rm=TRUE)
+# View(dat2)
+hist(dat2$steps)
+
+```
+```{r mean of steps per day}
+summary(dat2)
+```
+
+```{r average daily activity pattern,echo=TRUE}
+dat3<-aggregate(steps~interval, dat, mean, na.rm=TRUE)
+plot(steps~interval, data=dat3, type="l")
+dat3[which.max(dat3$steps),]$interval
+```
+
+```{r Imputing missing values, echo=TRUE}
+sum(is.na(dat$steps))
+
+dat4 <- dat
+
+for(i in 1:ncol(dat4)){
+  dat4[is.na(dat4[,i]), i] <- mean(dat4[,i], na.rm = TRUE)
+}
+
+dat4<- aggregate(steps ~ date, dat4, sum)
+
+hist(dat4$steps)
+```
+
+```{r new MEAN AND MEDIAN after imputing missing values}
+mean(dat4$steps)
+mean(dat4$steps)
+
+```
+
+```{r Are there differences in activity patterns between weekdays and weekends?}
+dat$date <- as.Date(strptime(dat$date, format="%Y-%m-%d"))
+dat$day <- weekdays(dat$date)
+for (i in 1:nrow(dat)) {
+    if (dat[i,]$day %in% c("Saturday","Sunday")) {
+        dat[i,]$day<-"weekend"
+    }
+    else{
+        dat[i,]$day<-"weekday"
+    }
+}
+
+
+dat5 <- aggregate(dat$steps ~ dat$interval + dat$day, dat, mean)
+
+View(dat5)
+```
+
+```{r make panel plot}
+names(dat5) <- c("interval", "day", "steps")
+library(lattice)
+xyplot(steps ~ interval | day, dat5, type = "l", layout = c(1, 2), 
+    xlab = "Interval", ylab = "Number of steps")
+
+```
